@@ -177,16 +177,16 @@
   </div>
 </div>
 
-<!-- ============ 画面0a: 接続先の設定（管理者が端末ごとに1回） ============ -->
-<div class="screen" id="screen-apisetup">
-  <div class="header"><div class="header-title" style="color:#fff;font-weight:700;">初期設定（管理者用）</div></div>
+<!-- ============ 画面0a: 事業所コード（端末ごとに最初の1回） ============ -->
+<div class="screen" id="screen-office">
+  <div class="header"><div class="header-title" style="color:#fff;font-weight:700;">Sun Trip Support メーター</div></div>
   <div class="content">
     <div class="card">
-      <div class="card-label">接続先（GASのウェブアプリURL）</div>
-      <input type="url" id="api-input" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <div style="font-size:12px;color:var(--gray);margin-top:8px;line-height:1.6;">この端末で最初に1回だけ設定します。管理者から届いた「設定用リンク」を開いた場合は、この画面は表示されません。</div>
+      <div class="card-label">事業所コード（6桁）</div>
+      <input type="password" id="office-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="••••••" onkeydown="if(event.key==='Enter')saveOffice()">
+      <div style="font-size:12px;color:var(--gray);margin-top:8px;line-height:1.6;">この端末で最初に1回だけ入力します。コードは管理者から受け取ってください。</div>
     </div>
-    <button class="btn btn-primary" onclick="saveApiUrl()">保存する</button>
+    <button class="btn btn-primary" id="btn-office" onclick="saveOffice()">次へ</button>
   </div>
 </div>
 
@@ -195,12 +195,11 @@
   <div class="header"><div class="header-title" style="color:#fff;font-weight:700;">Sun Trip Support メーター</div></div>
   <div class="content">
     <div class="card">
-      <div class="card-label">ドライバーPIN（6桁）</div>
-      <input type="password" id="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="••••••" onkeydown="if(event.key==='Enter')login()">
+      <div class="card-label">ドライバーPIN（4桁）</div>
+      <input type="password" id="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" onkeydown="if(event.key==='Enter')login()">
       <div style="font-size:12px;color:var(--gray);margin-top:8px;line-height:1.6;">PINは管理者から受け取ってください。ログインは16時間有効です。</div>
     </div>
     <button class="btn btn-primary" id="btn-login" onclick="login()">ログイン</button>
-    <button class="btn btn-ghost btn-sm" onclick="showScreen('apisetup')">接続先の再設定（管理者用）</button>
   </div>
 </div>
 
@@ -377,14 +376,15 @@
 
 <script>
 // =========================================
-// Sun Trip Support メーター  セキュリティ強化版 v2.0（2026-11-05）
-// ・接続先（GASのURL）はコードに書かない。管理者が端末ごとに1回だけ設定する
-// ・ドライバーは自分のPIN（6桁）でログインする
+// Sun Trip Support メーター  セキュリティ強化版 v2.1（2026-11-05）
+// ・端末ごとに最初の1回だけ「事業所コード（6桁）」を入れる（管理者がいつでも変更できる）
+// ・ドライバーは自分のPIN（4桁）でログインする（16時間有効）
+// ・接続先のURLは公開されている前提。コードとPINの両方が正しくないと、名簿も記録も扱えない
 // ・料金はサーバー（GAS）で計算し直して保存する。画面の金額は目安
 // =========================================
-const API_STORE   = 'suntrip_api';
-const TOKEN_STORE = 'suntrip_session';
-const API_RE = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec$/;
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCaU9TYv1xmUxoXhOBJnRB85XAS5MKTxhcfQwY7qJhv3kUZXybMMigizHrF2MlmibS/exec';
+const OFFICE_STORE = 'suntrip_office';
+const TOKEN_STORE  = 'suntrip_session';
 
 // 料金パラメーター（起動時にサーバーの「設定」シートの値で上書きされる）
 const FARE = {
@@ -409,21 +409,25 @@ let saving = false;
 // =========================================
 // 接続先・ログイン情報
 // =========================================
-function getApiUrl() { try { return localStorage.getItem(API_STORE) || ''; } catch { return ''; } }
-function captureApiFromHash() {
-  // 管理者が送る設定用リンク（…/suntrip-meter/#api=xxxx）から接続先を受け取る。#以降はサーバーに送られない
-  const m = location.hash.match(/(?:^#|&)api=([A-Za-z0-9_-]{20,})/);
-  if (!m) return;
-  try { localStorage.setItem(API_STORE, `https://script.google.com/macros/s/${m[1]}/exec`); } catch {}
-  history.replaceState(null, '', location.pathname + location.search);
-}
-function saveApiUrl() {
-  const v = document.getElementById('api-input').value.trim();
-  if (!API_RE.test(v)) { showToast('⚠️ 「https://script.google.com/macros/s/…/exec」の形で入力してください'); return; }
-  try { localStorage.setItem(API_STORE, v); } catch {}
-  document.getElementById('api-input').value = '';
-  showToast('✅ 接続先を保存しました');
-  showScreen('login');
+function getOffice() { try { return localStorage.getItem(OFFICE_STORE) || ''; } catch { return ''; } }
+function clearOffice() { try { localStorage.removeItem(OFFICE_STORE); } catch {} }
+async function saveOffice() {
+  const input = document.getElementById('office-input');
+  const v = input.value.trim();
+  if (!/^\d{6}$/.test(v)) { showToast('⚠️ 事業所コードは6桁の数字です'); return; }
+  const btn = document.getElementById('btn-office');
+  btn.disabled = true; btn.textContent = '確認中...';
+  try {
+    await api('checkOffice', { office: v });
+    try { localStorage.setItem(OFFICE_STORE, v); } catch {}
+    input.value = '';
+    showToast('✅ 事業所コードを確認しました');
+    showScreen('login');
+  } catch (e) {
+    showToast('⚠️ ' + errText(e));
+  } finally {
+    btn.disabled = false; btn.textContent = '次へ';
+  }
 }
 function getSession() {
   try {
@@ -439,8 +443,9 @@ const ERROR_TEXT = {
   network: '通信できませんでした。電波の良い場所でもう一度お試しください',
   auth: 'ログインの有効期限が切れました。PINを入力し直してください',
   bad_pin: 'PINが違います',
-  locked: 'PINの入力ミスが続いたため、15分間ログインを停止しています。管理者に連絡してください',
-  not_configured: '接続先が設定されていません。管理者に連絡してください',
+  bad_office: '事業所コードが違います',
+  locked: '入力ミスが続いたため、ログインを一時停止しています。しばらく待つか、管理者に連絡してください',
+  office_not_set: '事業所コードがまだ発行されていません。管理者に連絡してください',
   unknown_member: '利用者が名簿にありません。管理者に確認してください',
   bad_time: '時刻が正しくありません。端末の時計を確認してください',
   too_old: '7日以上前の記録は送信できません。管理者に連絡してください',
@@ -452,11 +457,9 @@ function apiError(code) { const e = new Error(code); e.code = code; return e; }
 
 // GASへの送信は必ずPOST（本文）で行う。個人情報をURLに載せない
 async function api(action, payload = {}) {
-  const url = getApiUrl();
-  if (!url) throw apiError('not_configured');
   let res;
   try {
-    res = await fetch(url, {
+    res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(Object.assign({ action }, payload)),
@@ -472,11 +475,13 @@ async function api(action, payload = {}) {
 async function login() {
   const input = document.getElementById('pin-input');
   const pin = input.value.trim();
-  if (!/^\d{6}$/.test(pin)) { showToast('⚠️ PINは6桁の数字です'); return; }
+  if (!/^\d{4}$/.test(pin)) { showToast('⚠️ PINは4桁の数字です'); return; }
+  const office = getOffice();
+  if (!office) { showScreen('office'); return; }
   const btn = document.getElementById('btn-login');
   btn.disabled = true; btn.textContent = '確認中...';
   try {
-    const d = await api('login', { pin });
+    const d = await api('login', { office, pin });
     setSession({ token: d.token, driver: d.driver, exp: d.expiresAt });
     input.value = '';
     if (resumeTo) {
@@ -489,7 +494,14 @@ async function login() {
       boot();
     }
   } catch (e) {
-    showToast('⚠️ ' + errText(e));
+    if (e.code === 'bad_office') {
+      // 管理者が事業所コードを変えた場合など
+      clearOffice(); input.value = '';
+      showToast('⚠️ 事業所コードが変わった可能性があります。新しいコードを入力してください');
+      showScreen('office');
+    } else {
+      showToast('⚠️ ' + errText(e));
+    }
   } finally {
     btn.disabled = false; btn.textContent = 'ログイン';
   }
@@ -943,10 +955,10 @@ function restoreTrip(saved) {
 // 起動
 // =========================================
 window.addEventListener('DOMContentLoaded', () => {
-  try { localStorage.removeItem('suntrip_driver'); } catch {}   // 旧版の保存データを片付ける
-  captureApiFromHash();
+  try { localStorage.removeItem('suntrip_driver'); localStorage.removeItem('suntrip_api'); } catch {}   // 旧版の保存データを片付ける
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   renderFareTexts();
-  if (!getApiUrl()) { showScreen('apisetup'); return; }
+  if (!getOffice()) { showScreen('office'); return; }
   boot();
 });
 </script>
