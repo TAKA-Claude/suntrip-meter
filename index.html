@@ -115,6 +115,8 @@
   .role-amount { font-size: 16px; font-weight: 700; color: var(--gold); white-space: nowrap; }
   .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .role-grid .wide { grid-column: 1 / -1; }
+  .brk { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .brk select { padding: 10px 8px; font-size: 16px; text-align: center; text-align-last: center; }
   .role-grid.one { grid-template-columns: 1fr; }
   .role-grid label { font-size: 11px; color: var(--gray); display: block; margin-bottom: 4px; }
   .role-grid input { padding: 10px 8px; font-size: 16px; text-align: center; }
@@ -353,7 +355,7 @@
         <div class="role-grid">
           <div><label>開始</label><input type="text" id="d-start" readonly></div>
           <div><label>終了</label><input type="text" id="d-end" readonly></div>
-          <div class="wide"><label>休憩（課金しない時間・分）</label><input type="number" id="d-break" inputmode="numeric" min="0" step="1" value="0" oninput="onRoleInput()"></div>
+          <div class="wide"><label>休憩（課金しない時間・0〜6時間）</label><div class="brk"><select id="d-bh" onchange="onRoleInput()"><option value="0">0時間</option><option value="1">1時間</option><option value="2">2時間</option><option value="3">3時間</option><option value="4">4時間</option><option value="5">5時間</option><option value="6">6時間</option></select><select id="d-bm" onchange="onRoleInput()"><option value="0">0分</option><option value="1">1分</option><option value="2">2分</option><option value="3">3分</option><option value="4">4分</option><option value="5">5分</option><option value="6">6分</option><option value="7">7分</option><option value="8">8分</option><option value="9">9分</option><option value="10">10分</option><option value="11">11分</option><option value="12">12分</option><option value="13">13分</option><option value="14">14分</option><option value="15">15分</option><option value="16">16分</option><option value="17">17分</option><option value="18">18分</option><option value="19">19分</option><option value="20">20分</option><option value="21">21分</option><option value="22">22分</option><option value="23">23分</option><option value="24">24分</option><option value="25">25分</option><option value="26">26分</option><option value="27">27分</option><option value="28">28分</option><option value="29">29分</option><option value="30">30分</option><option value="31">31分</option><option value="32">32分</option><option value="33">33分</option><option value="34">34分</option><option value="35">35分</option><option value="36">36分</option><option value="37">37分</option><option value="38">38分</option><option value="39">39分</option><option value="40">40分</option><option value="41">41分</option><option value="42">42分</option><option value="43">43分</option><option value="44">44分</option><option value="45">45分</option><option value="46">46分</option><option value="47">47分</option><option value="48">48分</option><option value="49">49分</option><option value="50">50分</option><option value="51">51分</option><option value="52">52分</option><option value="53">53分</option><option value="54">54分</option><option value="55">55分</option><option value="56">56分</option><option value="57">57分</option><option value="58">58分</option><option value="59">59分</option></select></div></div>
         </div>
         <div class="role-info" id="d-info"></div>
       </div>
@@ -363,7 +365,7 @@
         <div class="role-grid">
           <div><label>開始</label><input type="time" id="s0-start" oninput="onRoleInput()"></div>
           <div><label>終了</label><input type="time" id="s0-end" oninput="onRoleInput()"></div>
-          <div class="wide"><label>休憩（課金しない時間・分）</label><input type="number" id="s0-break" inputmode="numeric" min="0" step="1" value="0" oninput="onRoleInput()"></div>
+          <div class="wide"><label>休憩（課金しない時間・0〜6時間）</label><div class="brk"><select id="s0-bh" onchange="onRoleInput()"><option value="0">0時間</option><option value="1">1時間</option><option value="2">2時間</option><option value="3">3時間</option><option value="4">4時間</option><option value="5">5時間</option><option value="6">6時間</option></select><select id="s0-bm" onchange="onRoleInput()"><option value="0">0分</option><option value="1">1分</option><option value="2">2分</option><option value="3">3分</option><option value="4">4分</option><option value="5">5分</option><option value="6">6分</option><option value="7">7分</option><option value="8">8分</option><option value="9">9分</option><option value="10">10分</option><option value="11">11分</option><option value="12">12分</option><option value="13">13分</option><option value="14">14分</option><option value="15">15分</option><option value="16">16分</option><option value="17">17分</option><option value="18">18分</option><option value="19">19分</option><option value="20">20分</option><option value="21">21分</option><option value="22">22分</option><option value="23">23分</option><option value="24">24分</option><option value="25">25分</option><option value="26">26分</option><option value="27">27分</option><option value="28">28分</option><option value="29">29分</option><option value="30">30分</option><option value="31">31分</option><option value="32">32分</option><option value="33">33分</option><option value="34">34分</option><option value="35">35分</option><option value="36">36分</option><option value="37">37分</option><option value="38">38分</option><option value="39">39分</option><option value="40">40分</option><option value="41">41分</option><option value="42">42分</option><option value="43">43分</option><option value="44">44分</option><option value="45">45分</option><option value="46">46分</option><option value="47">47分</option><option value="48">48分</option><option value="49">49分</option><option value="50">50分</option><option value="51">51分</option><option value="52">52分</option><option value="53">53分</option><option value="54">54分</option><option value="55">55分</option><option value="56">56分</option><option value="57">57分</option><option value="58">58分</option><option value="59">59分</option></select></div></div>
         </div>
         <div class="role-info" id="s0-info"></div>
       </div>
@@ -373,7 +375,7 @@
         <div class="role-grid">
           <div><label>開始</label><input type="time" id="s1-start" oninput="onRoleInput()"></div>
           <div><label>終了</label><input type="time" id="s1-end" oninput="onRoleInput()"></div>
-          <div class="wide"><label>休憩（課金しない時間・分）</label><input type="number" id="s1-break" inputmode="numeric" min="0" step="1" value="0" oninput="onRoleInput()"></div>
+          <div class="wide"><label>休憩（課金しない時間・0〜6時間）</label><div class="brk"><select id="s1-bh" onchange="onRoleInput()"><option value="0">0時間</option><option value="1">1時間</option><option value="2">2時間</option><option value="3">3時間</option><option value="4">4時間</option><option value="5">5時間</option><option value="6">6時間</option></select><select id="s1-bm" onchange="onRoleInput()"><option value="0">0分</option><option value="1">1分</option><option value="2">2分</option><option value="3">3分</option><option value="4">4分</option><option value="5">5分</option><option value="6">6分</option><option value="7">7分</option><option value="8">8分</option><option value="9">9分</option><option value="10">10分</option><option value="11">11分</option><option value="12">12分</option><option value="13">13分</option><option value="14">14分</option><option value="15">15分</option><option value="16">16分</option><option value="17">17分</option><option value="18">18分</option><option value="19">19分</option><option value="20">20分</option><option value="21">21分</option><option value="22">22分</option><option value="23">23分</option><option value="24">24分</option><option value="25">25分</option><option value="26">26分</option><option value="27">27分</option><option value="28">28分</option><option value="29">29分</option><option value="30">30分</option><option value="31">31分</option><option value="32">32分</option><option value="33">33分</option><option value="34">34分</option><option value="35">35分</option><option value="36">36分</option><option value="37">37分</option><option value="38">38分</option><option value="39">39分</option><option value="40">40分</option><option value="41">41分</option><option value="42">42分</option><option value="43">43分</option><option value="44">44分</option><option value="45">45分</option><option value="46">46分</option><option value="47">47分</option><option value="48">48分</option><option value="49">49分</option><option value="50">50分</option><option value="51">51分</option><option value="52">52分</option><option value="53">53分</option><option value="54">54分</option><option value="55">55分</option><option value="56">56分</option><option value="57">57分</option><option value="58">58分</option><option value="59">59分</option></select></div></div>
         </div>
         <div class="role-info" id="s1-info"></div>
       </div>
@@ -382,8 +384,8 @@
     <div class="card">
       <div class="card-label">料金内訳（役割ごと）</div>
       <div class="breakdown-row"><span class="label" id="sum-driver-label">ドライバー（運賃）</span><span class="value" id="sum-base"></span></div>
-      <div class="breakdown-row discount" id="sum-discount-row" style="display:none;">
-        <span class="label">障害者手帳割引（運賃1割引）</span><span class="value" id="sum-discount"></span>
+      <div class="breakdown-row" id="sum-discount-row">
+        <span class="label">障害者手帳割引（運賃のみ1割引）</span><span class="value" id="sum-discount"></span>
       </div>
       <div class="breakdown-row" id="sum-s0-row" style="display:none;"><span class="label" id="sum-s0-label"></span><span class="value" id="sum-s0"></span></div>
       <div class="breakdown-row" id="sum-s1-row" style="display:none;"><span class="label" id="sum-s1-label"></span><span class="value" id="sum-s1"></span></div>
@@ -873,25 +875,35 @@ function showSummaryScreen() {
   document.getElementById('d-title').textContent = `🚗 ドライバー（${state.driver}）`;
   document.getElementById('d-start').value = fmtTime(state.startTime);
   document.getElementById('d-end').value = fmtTime(state.endTime);
-  document.getElementById('d-break').value = String(state.driverBreak || 0);
+  writeBreak('d', state.driverBreak);
   state.staff.forEach((st, i) => {
     document.getElementById(`role-s${i}`).style.display = st.type ? '' : 'none';
     document.getElementById(`s${i}-title`).textContent = `${i === 0 ? '同行スタッフ①' : '同行スタッフ②'}（${STAFF_NAME[st.type] || ''}）`;
     document.getElementById(`s${i}-start`).value = st.start;
     document.getElementById(`s${i}-end`).value = st.end;
-    document.getElementById(`s${i}-break`).value = String(st.breakMin || 0);
+    writeBreak(`s${i}`, st.breakMin);
   });
   document.getElementById('save-error').style.display = 'none';
   renderSummaryAmounts();
   showScreen('summary');
 }
+function readBreak(p) {
+  let h = Number(document.getElementById(`${p}-bh`).value), m = Number(document.getElementById(`${p}-bm`).value);
+  if (h >= 6) { h = 6; m = 0; document.getElementById(`${p}-bm`).value = '0'; }   // 上限は6時間（360分）
+  return h * 60 + m;
+}
+function writeBreak(p, min) {
+  const t = Math.max(0, Math.min(360, Math.floor(Number(min) || 0)));
+  document.getElementById(`${p}-bh`).value = String(Math.floor(t / 60));
+  document.getElementById(`${p}-bm`).value = String(t % 60);
+}
 function onRoleInput() {
-  state.driverBreak = document.getElementById('d-break').value;
+  state.driverBreak = readBreak('d');
   state.staff.forEach((st, i) => {
     if (!st.type) return;
     st.start = document.getElementById(`s${i}-start`).value;
     st.end = document.getElementById(`s${i}-end`).value;
-    st.breakMin = document.getElementById(`s${i}-break`).value;
+    st.breakMin = readBreak(`s${i}`);
   });
   renderSummaryAmounts();
   persistTrip();
@@ -908,7 +920,10 @@ function renderSummaryAmounts() {
     : '休憩は、0分以上で全体の時間より短くしてください', !d.ok);
   document.getElementById('sum-base').textContent = d.ok ? fmtYen(d.baseRaw) : '—';
   document.getElementById('sum-driver-label').textContent = `ドライバー（運賃）課金${d.ok ? fmtDur(d.net) : '—'}`;
-  setRow('sum-discount-row', 'sum-discount', state.discount && d.ok, `-${fmtYen(d.discountAmt)}`);
+  // 障害者手帳割引は、適用の有無にかかわらず常に表示する（適用なしは「なし ¥0」）
+  document.getElementById('sum-discount-row').style.display = '';
+  document.getElementById('sum-discount-row').classList.toggle('discount', !!state.discount);
+  document.getElementById('sum-discount').textContent = !d.ok ? '—' : (state.discount ? `-${fmtYen(d.discountAmt)}` : '適用なし ¥0');
   c.staff.forEach((l, i) => {
     const row = document.getElementById(`sum-s${i}-row`);
     if (!l) { row.style.display = 'none'; return; }
