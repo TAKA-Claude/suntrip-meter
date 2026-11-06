@@ -52,7 +52,7 @@
   .card { background: var(--bg2); border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
   .card-label { font-size: 13px; color: var(--gray); font-weight: 700; margin-bottom: 10px; }
 
-  select, input[type=text], input[type=password], input[type=url] {
+  select, input[type=text], input[type=password], input[type=url], input[type=time], input[type=number] {
     width: 100%; padding: 14px; font-size: 16px; border-radius: 10px;
     background: var(--bg3); color: var(--text); border: 1px solid var(--border);
   }
@@ -108,6 +108,18 @@
   .gps-dot.ok { background: var(--green); }
   .gps-dot.error { background: var(--red); }
 
+  .role-block { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg3); }
+  .role-block + .role-block { margin-top: 12px; }
+  .role-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .role-title { font-size: 14px; font-weight: 700; }
+  .role-amount { font-size: 16px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .role-grid .wide { grid-column: 1 / -1; }
+  .role-grid.one { grid-template-columns: 1fr; }
+  .role-grid label { font-size: 11px; color: var(--gray); display: block; margin-bottom: 4px; }
+  .role-grid input { padding: 10px 8px; font-size: 16px; text-align: center; }
+  .role-info { font-size: 12px; color: var(--gray); margin-top: 8px; line-height: 1.6; }
+  .role-info.bad { color: var(--red); font-weight: 700; }
   .breakdown-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--border); }
   .breakdown-row:last-child { border-bottom: none; }
   .breakdown-row .label { color: var(--gray); }
@@ -229,20 +241,21 @@
     </div>
 
     <div class="card">
-      <div class="card-label">同行スタッフ（複数選択可）</div>
-      <div class="toggle-row" id="comp-kaigo" onclick="toggleCompanion('kaigo')" style="margin-bottom:10px;">
+      <div class="card-label">同行スタッフ（最大2名・それぞれ別の時間で計算します）</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
         <div>
-          <div class="label">🧑‍⚕️ 介護士</div>
-          <div class="desc" id="desc-kaigo">30分1,800円／追加15分ごと900円</div>
+          <div class="mini-label" style="font-size:12px;color:var(--gray);margin-bottom:4px;">同行スタッフ①</div>
+          <select id="staff-type-0" onchange="setStaffType(0, this.value)">
+            <option value="">なし</option><option value="kaigo">🧑‍⚕️ 介護士</option><option value="kango">👩‍⚕️ 看護師・理学療法士</option>
+          </select>
         </div>
-        <div class="switch"></div>
-      </div>
-      <div class="toggle-row" id="comp-kango" onclick="toggleCompanion('kango')">
         <div>
-          <div class="label">👩‍⚕️ 看護師・理学療法士</div>
-          <div class="desc" id="desc-kango">30分2,500円／追加15分ごと1,250円</div>
+          <div class="mini-label" style="font-size:12px;color:var(--gray);margin-bottom:4px;">同行スタッフ②</div>
+          <select id="staff-type-1" onchange="setStaffType(1, this.value)">
+            <option value="">なし</option><option value="kaigo">🧑‍⚕️ 介護士</option><option value="kango">👩‍⚕️ 看護師・理学療法士</option>
+          </select>
         </div>
-        <div class="switch"></div>
+        <div class="desc" style="font-size:11px;color:var(--gray);line-height:1.6;" id="desc-staff">介護士 30分1,800円／追加15分ごと900円　看護師等 30分2,500円／追加15分ごと1,250円<br>同行スタッフの時間と休憩は、乗車のあとの確認画面で入力します</div>
       </div>
     </div>
 
@@ -326,25 +339,55 @@
       <div class="card-label">利用者・乗車情報</div>
       <div class="breakdown-row"><span class="label">利用者</span><span class="value" id="sum-member"></span></div>
       <div class="breakdown-row"><span class="label">ドライバー</span><span class="value" id="sum-driver"></span></div>
-      <div class="breakdown-row"><span class="label">乗車時刻</span><span class="value" id="sum-start"></span></div>
-      <div class="breakdown-row"><span class="label">終了時刻</span><span class="value" id="sum-end"></span></div>
-      <div class="breakdown-row"><span class="label">経過時間</span><span class="value" id="sum-elapsed"></span></div>
+      <div class="breakdown-row"><span class="label">乗車時刻（ドライバー）</span><span class="value" id="sum-start"></span></div>
+      <div class="breakdown-row"><span class="label">終了時刻（ドライバー）</span><span class="value" id="sum-end"></span></div>
+      <div class="breakdown-row"><span class="label">経過時間（休憩を引く前）</span><span class="value" id="sum-elapsed"></span></div>
       <div class="breakdown-row"><span class="label">参考走行距離</span><span class="value" id="sum-dist"></span></div>
     </div>
 
     <div class="card">
-      <div class="card-label">料金内訳</div>
-      <div class="breakdown-row"><span class="label">運賃</span><span class="value" id="sum-base"></span></div>
+      <div class="card-label">役割ごとの時間と休憩（休憩は料金に数えません）</div>
+
+      <div class="role-block" id="role-driver">
+        <div class="role-head"><div class="role-title" id="d-title">🚗 ドライバー</div><div class="role-amount" id="d-amount"></div></div>
+        <div class="role-grid">
+          <div><label>開始</label><input type="text" id="d-start" readonly></div>
+          <div><label>終了</label><input type="text" id="d-end" readonly></div>
+          <div class="wide"><label>休憩（課金しない時間・分）</label><input type="number" id="d-break" inputmode="numeric" min="0" step="1" value="0" oninput="onRoleInput()"></div>
+        </div>
+        <div class="role-info" id="d-info"></div>
+      </div>
+
+      <div class="role-block" id="role-s0" style="display:none;">
+        <div class="role-head"><div class="role-title" id="s0-title">同行スタッフ①</div><div class="role-amount" id="s0-amount"></div></div>
+        <div class="role-grid">
+          <div><label>開始</label><input type="time" id="s0-start" oninput="onRoleInput()"></div>
+          <div><label>終了</label><input type="time" id="s0-end" oninput="onRoleInput()"></div>
+          <div class="wide"><label>休憩（課金しない時間・分）</label><input type="number" id="s0-break" inputmode="numeric" min="0" step="1" value="0" oninput="onRoleInput()"></div>
+        </div>
+        <div class="role-info" id="s0-info"></div>
+      </div>
+
+      <div class="role-block" id="role-s1" style="display:none;">
+        <div class="role-head"><div class="role-title" id="s1-title">同行スタッフ②</div><div class="role-amount" id="s1-amount"></div></div>
+        <div class="role-grid">
+          <div><label>開始</label><input type="time" id="s1-start" oninput="onRoleInput()"></div>
+          <div><label>終了</label><input type="time" id="s1-end" oninput="onRoleInput()"></div>
+          <div class="wide"><label>休憩（課金しない時間・分）</label><input type="number" id="s1-break" inputmode="numeric" min="0" step="1" value="0" oninput="onRoleInput()"></div>
+        </div>
+        <div class="role-info" id="s1-info"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">料金内訳（役割ごと）</div>
+      <div class="breakdown-row"><span class="label" id="sum-driver-label">ドライバー（運賃）</span><span class="value" id="sum-base"></span></div>
       <div class="breakdown-row discount" id="sum-discount-row" style="display:none;">
         <span class="label">障害者手帳割引（運賃1割引）</span><span class="value" id="sum-discount"></span>
       </div>
-      <div class="breakdown-row" id="sum-companion-kaigo-row" style="display:none;">
-        <span class="label">同行スタッフ料金（介護士）</span><span class="value" id="sum-companion-kaigo"></span>
-      </div>
-      <div class="breakdown-row" id="sum-companion-kango-row" style="display:none;">
-        <span class="label">同行スタッフ料金（看護師・理学療法士）</span><span class="value" id="sum-companion-kango"></span>
-      </div>
-      <div class="breakdown-row total"><span class="label">合計</span><span class="value" id="sum-total"></span></div>
+      <div class="breakdown-row" id="sum-s0-row" style="display:none;"><span class="label" id="sum-s0-label"></span><span class="value" id="sum-s0"></span></div>
+      <div class="breakdown-row" id="sum-s1-row" style="display:none;"><span class="label" id="sum-s1-label"></span><span class="value" id="sum-s1"></span></div>
+      <div class="breakdown-row total"><span class="label">請求合計</span><span class="value" id="sum-total"></span></div>
     </div>
 
     <div class="info-banner" id="save-error" style="display:none;color:var(--red);background:rgba(225,67,67,.08);border-color:rgba(225,67,67,.35);text-align:left;"></div>
@@ -395,8 +438,9 @@ const FARE = {
   discountRate: 0.10, maxHours: 24,
 };
 
+function newStaff() { return { type: '', start: '', end: '', breakMin: 0 }; }
 const state = {
-  recordId: '', driver: '', member: '', companionKaigo: false, companionKango: false, discount: false,
+  recordId: '', driver: '', member: '', staff: [newStaff(), newStaff()], driverBreak: 0, discount: false,
   startTime: null, endTime: null, distM: 0, lastPos: null, coords: [],
   timerInterval: null, geoId: null,
 };
@@ -568,43 +612,102 @@ function setSyncBadge(status, text) {
 
 function renderFareTexts() {
   document.getElementById('info-banner-main').textContent =
-    `運賃：30分${fmtYen(FARE.base30)}／以後${FARE.stepMinutes}分ごと${fmtYen(FARE.baseStep)}`;
-  document.getElementById('desc-kaigo').textContent =
-    `30分${fmtYen(FARE.kaigo30)}／追加${FARE.stepMinutes}分ごと${fmtYen(FARE.kaigoStep)}`;
-  document.getElementById('desc-kango').textContent =
-    `30分${fmtYen(FARE.kango30)}／追加${FARE.stepMinutes}分ごと${fmtYen(FARE.kangoStep)}`;
+    `ドライバー運賃：30分${fmtYen(FARE.base30)}／以後${FARE.stepMinutes}分ごと${fmtYen(FARE.baseStep)}（役割ごとに別々の時間で計算）`;
+  const d = document.getElementById('desc-staff');
+  d.textContent = '';
+  d.appendChild(document.createTextNode(
+    `介護士 30分${fmtYen(FARE.kaigo30)}／追加${FARE.stepMinutes}分ごと${fmtYen(FARE.kaigoStep)}　看護師等 30分${fmtYen(FARE.kango30)}／追加${FARE.stepMinutes}分ごと${fmtYen(FARE.kangoStep)}`));
+  d.appendChild(document.createElement('br'));
+  d.appendChild(document.createTextNode('同行スタッフの時間と休憩は、乗車のあとの確認画面で入力します'));
   document.getElementById('desc-discount').textContent =
-    `運賃のみ${Math.round(FARE.discountRate * 10)}割引（同行スタッフ料金は対象外）`;
+    `運賃（ドライバー分）のみ${Math.round(FARE.discountRate * 10)}割引（同行スタッフ料金は対象外）`;
 }
 
 // =========================================
 // 料金計算（画面表示用の目安。保存される金額はサーバーで計算し直す）
+// 役割（ドライバー／同行①／同行②）ごとに、開始〜終了から休憩を引いた時間で別々に数える
 // =========================================
-function calcSteps(elapsedMin) {
-  if (elapsedMin <= 30) return 0;
-  const over = elapsedMin - 30;
+const STAFF_NAME = { kaigo: '介護士', kango: '看護師等' };
+function calcSteps(netMin) {
+  if (netMin <= 30) return 0;
+  const over = netMin - 30;
   const fullSteps = Math.floor(over / FARE.stepMinutes);
   const remainder = over - fullSteps * FARE.stepMinutes;
   return remainder > FARE.graceMinutes ? fullSteps + 1 : fullSteps;
 }
-function calcFareBreakdown(elapsedMin) {
-  const em = Math.min(elapsedMin, FARE.maxHours * 60);
-  const steps = calcSteps(em);
-  const baseRaw = FARE.base30 + steps * FARE.baseStep;
-  const discountAmt = state.discount ? Math.round(baseRaw * FARE.discountRate) : 0;
-  const base = baseRaw - discountAmt;
-  const companionKaigo = state.companionKaigo ? FARE.kaigo30 + steps * FARE.kaigoStep : 0;
-  const companionKango = state.companionKango ? FARE.kango30 + steps * FARE.kangoStep : 0;
-  return { baseRaw, discountAmt, base, companionKaigo, companionKango, total: base + companionKaigo + companionKango };
+function parseHm(str) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(str || ''));
+  return m ? { h: Number(m[1]), m: Number(m[2]) } : null;
+}
+function hhmm(d) { return fmtTime(d); }
+function breakValue(v) {
+  const n = Number(v);
+  return v === '' || v === null || v === undefined ? 0 : n;
+}
+function breakOk(n, gross) { return isFinite(n) && n >= 0 && Math.floor(n) === n && n < gross && n <= 24 * 60; }
+
+// 同行スタッフ1名分の開始・終了（時刻は乗車の日付を基準に、いちばん近い日にあてはめる）
+function staffSpan(st) {
+  if (!state.startTime) return null;
+  const tripStart = state.startTime;
+  const tripEnd = state.endTime || new Date();
+  let s = tripStart, e = tripEnd;
+  if (st.start || st.end) {
+    const hs = parseHm(st.start), he = parseHm(st.end);
+    if (!hs || !he) return null;
+    let best = null;
+    for (const off of [-1, 0, 1]) {
+      const c = new Date(tripStart.getFullYear(), tripStart.getMonth(), tripStart.getDate() + off, hs.h, hs.m, 0, 0);
+      if (best === null || Math.abs(c - tripStart) < Math.abs(best - tripStart)) best = c;
+    }
+    s = best;
+    e = new Date(s.getFullYear(), s.getMonth(), s.getDate(), he.h, he.m, 0, 0);
+    if (e <= s) e = new Date(e.getFullYear(), e.getMonth(), e.getDate() + 1, he.h, he.m, 0, 0);
+  }
+  return { start: s, end: e, gross: (e - s) / 60000 };
+}
+
+function calcAll() {
+  const maxMin = FARE.maxHours * 60;
+  const out = { ok: true, driver: null, staff: [], total: 0 };
+  // ドライバー
+  const dGross = Math.min(elapsedMinutes(), maxMin);
+  const dBreak = breakValue(state.driverBreak);
+  const dOk = breakOk(dBreak, dGross) || (dGross <= 0 && dBreak === 0);
+  const dNet = dGross - (isFinite(dBreak) ? dBreak : 0);
+  const steps = dOk ? calcSteps(dNet) : 0;
+  const baseRaw = dOk ? FARE.base30 + steps * FARE.baseStep : 0;
+  const discountAmt = dOk && state.discount ? Math.round(baseRaw * FARE.discountRate) : 0;
+  out.driver = { ok: dOk, gross: dGross, breakMin: dBreak, net: dNet, steps, baseRaw, discountAmt, amount: baseRaw - discountAmt };
+  if (!dOk) out.ok = false;
+  out.total = out.driver.amount;
+  // 同行スタッフ
+  state.staff.forEach((st, i) => {
+    if (!st.type) { out.staff.push(null); return; }
+    const sp = staffSpan(st);
+    const br = breakValue(st.breakMin);
+    let line = { type: st.type, ok: false, span: sp, breakMin: br, gross: 0, net: 0, steps: 0, amount: 0, error: '' };
+    if (!sp) line.error = '開始と終了の時刻を入力してください';
+    else if (sp.gross <= 0) line.error = '終了は開始より後にしてください';
+    else if (sp.gross > maxMin) line.error = '時間が長すぎます';
+    else if (!breakOk(br, sp.gross)) line.error = '休憩は、0分以上で全体の時間より短くしてください';
+    else {
+      line.ok = true; line.gross = sp.gross; line.net = sp.gross - br; line.steps = calcSteps(line.net);
+      line.amount = st.type === 'kaigo' ? FARE.kaigo30 + line.steps * FARE.kaigoStep : FARE.kango30 + line.steps * FARE.kangoStep;
+    }
+    if (!line.ok) out.ok = false;
+    out.staff.push(line);
+    out.total += line.amount;
+  });
+  return out;
 }
 
 // =========================================
 // 同行スタッフ・割引 選択
 // =========================================
-function toggleCompanion(type) {
-  const key = type === 'kaigo' ? 'companionKaigo' : 'companionKango';
-  state[key] = !state[key];
-  document.getElementById(`comp-${type}`).classList.toggle('active', state[key]);
+function setStaffType(i, type) {
+  state.staff[i] = Object.assign(state.staff[i], { type: type === 'kaigo' || type === 'kango' ? type : '' });
+  if (!state.staff[i].type) state.staff[i] = newStaff();
   persistTrip();
 }
 function toggleDiscount() {
@@ -733,7 +836,7 @@ function updateElapsedDisplay() {
   document.getElementById('elapsed-display').textContent = h > 0
     ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
     : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  document.getElementById('current-fare').textContent = fmtYen(calcFareBreakdown(elapsedMinutes()).total);
+  document.getElementById('current-fare').textContent = fmtYen(calcAll().total);
 }
 
 function finishTrip() {
@@ -743,29 +846,89 @@ function finishTrip() {
   showSummaryScreen();
 }
 
-function setRow(rowId, valueId, show, text) {
-  document.getElementById(rowId).style.display = show ? '' : 'none';
-  if (show) document.getElementById(valueId).textContent = text;
+function fmtDur(min) {
+  const t = Math.max(0, Math.round(min));
+  const h = Math.floor(t / 60), m = t % 60;
+  return h > 0 ? `${h}時間${m}分` : `${m}分`;
+}
+function fillStaffDefaults() {
+  state.staff.forEach(st => {
+    if (!st.type) return;
+    if (!st.start || !st.end) {
+      const a = new Date(state.startTime), b = new Date(state.endTime);
+      a.setSeconds(0, 0); b.setSeconds(0, 0);
+      if (b <= a) b.setTime(a.getTime() + 60000);
+      st.start = hhmm(a); st.end = hhmm(b);
+    }
+  });
 }
 function showSummaryScreen() {
-  const em = elapsedMinutes();
-  const fb = calcFareBreakdown(em);
-  const sec = Math.floor(em*60);
-  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
-
+  fillStaffDefaults();
   document.getElementById('sum-member').textContent = state.member;
   document.getElementById('sum-driver').textContent = state.driver;
   document.getElementById('sum-start').textContent = fmtTime(state.startTime);
   document.getElementById('sum-end').textContent = fmtTime(state.endTime);
-  document.getElementById('sum-elapsed').textContent = h>0 ? `${h}時間${m}分` : `${m}分`;
+  document.getElementById('sum-elapsed').textContent = fmtDur(elapsedMinutes());
   document.getElementById('sum-dist').textContent = `${(state.distM/1000).toFixed(3)}km`;
-  document.getElementById('sum-base').textContent = fmtYen(fb.baseRaw);
-  setRow('sum-discount-row', 'sum-discount', state.discount, `-${fmtYen(fb.discountAmt)}`);
-  setRow('sum-companion-kaigo-row', 'sum-companion-kaigo', state.companionKaigo, fmtYen(fb.companionKaigo));
-  setRow('sum-companion-kango-row', 'sum-companion-kango', state.companionKango, fmtYen(fb.companionKango));
-  document.getElementById('sum-total').textContent = fmtYen(fb.total);
+  document.getElementById('d-title').textContent = `🚗 ドライバー（${state.driver}）`;
+  document.getElementById('d-start').value = fmtTime(state.startTime);
+  document.getElementById('d-end').value = fmtTime(state.endTime);
+  document.getElementById('d-break').value = String(state.driverBreak || 0);
+  state.staff.forEach((st, i) => {
+    document.getElementById(`role-s${i}`).style.display = st.type ? '' : 'none';
+    document.getElementById(`s${i}-title`).textContent = `${i === 0 ? '同行スタッフ①' : '同行スタッフ②'}（${STAFF_NAME[st.type] || ''}）`;
+    document.getElementById(`s${i}-start`).value = st.start;
+    document.getElementById(`s${i}-end`).value = st.end;
+    document.getElementById(`s${i}-break`).value = String(st.breakMin || 0);
+  });
   document.getElementById('save-error').style.display = 'none';
+  renderSummaryAmounts();
   showScreen('summary');
+}
+function onRoleInput() {
+  state.driverBreak = document.getElementById('d-break').value;
+  state.staff.forEach((st, i) => {
+    if (!st.type) return;
+    st.start = document.getElementById(`s${i}-start`).value;
+    st.end = document.getElementById(`s${i}-end`).value;
+    st.breakMin = document.getElementById(`s${i}-break`).value;
+  });
+  renderSummaryAmounts();
+  persistTrip();
+}
+function setInfo(id, text, bad) {
+  const el = document.getElementById(id);
+  el.textContent = text; el.classList.toggle('bad', !!bad);
+}
+function renderSummaryAmounts() {
+  const c = calcAll();
+  const d = c.driver;
+  setInfo('d-info', d.ok
+    ? `${fmtDur(d.gross)} − 休憩${d.breakMin}分 ＝ 課金${fmtDur(d.net)}`
+    : '休憩は、0分以上で全体の時間より短くしてください', !d.ok);
+  document.getElementById('sum-base').textContent = d.ok ? fmtYen(d.baseRaw) : '—';
+  document.getElementById('sum-driver-label').textContent = `ドライバー（運賃）課金${d.ok ? fmtDur(d.net) : '—'}`;
+  setRow('sum-discount-row', 'sum-discount', state.discount && d.ok, `-${fmtYen(d.discountAmt)}`);
+  c.staff.forEach((l, i) => {
+    const row = document.getElementById(`sum-s${i}-row`);
+    if (!l) { row.style.display = 'none'; return; }
+    row.style.display = '';
+    document.getElementById(`sum-s${i}-label`).textContent =
+      `${i === 0 ? '同行①' : '同行②'}（${STAFF_NAME[l.type]}）課金${l.ok ? fmtDur(l.net) : '—'}`;
+    document.getElementById(`sum-s${i}`).textContent = l.ok ? fmtYen(l.amount) : '—';
+    document.getElementById(`s${i}-amount`).textContent = l.ok ? fmtYen(l.amount) : '—';
+    setInfo(`s${i}-info`, l.ok
+      ? `${hhmm(l.span.start)}〜${hhmm(l.span.end)}（${fmtDur(l.gross)}） − 休憩${l.breakMin}分 ＝ 課金${fmtDur(l.net)}`
+      : l.error, !l.ok);
+  });
+  document.getElementById('d-amount').textContent = d.ok ? fmtYen(d.amount) : '—';
+  document.getElementById('sum-total').textContent = c.ok ? fmtYen(c.total) : '—';
+  document.getElementById('btn-save').disabled = !c.ok;
+  return c;
+}
+function setRow(rowId, valueId, show, text) {
+  document.getElementById(rowId).style.display = show ? '' : 'none';
+  if (show) document.getElementById(valueId).textContent = text;
 }
 
 // =========================================
@@ -775,9 +938,11 @@ async function saveRecord() {
   if (saving) return;
   const s = getSession();
   if (!s) { resumeTo = 'summary'; showToast('⚠️ ' + ERROR_TEXT.auth); showScreen('login'); return; }
+  const calc = calcAll();
+  const errBox = document.getElementById('save-error');
+  if (!calc.ok) { errBox.textContent = '⚠️ 時間または休憩の入力を直してください（赤い表示の役割）'; errBox.style.display = ''; return; }
   saving = true;
   const btn = document.getElementById('btn-save');
-  const errBox = document.getElementById('save-error');
   btn.textContent = '送信中...'; btn.disabled = true;
 
   const pts = state.coords.slice();
@@ -788,16 +953,18 @@ async function saveRecord() {
       token: s.token,
       recordId: state.recordId,
       member: state.member,
-      companionKaigo: state.companionKaigo,
-      companionKango: state.companionKango,
       discount: state.discount,
       startTime: state.startTime.toISOString(),
       endTime: state.endTime.toISOString(),
+      driverBreakMin: Number(breakValue(state.driverBreak)),
+      staff: calc.staff.filter(Boolean).map(l => ({
+        type: l.type, startTime: l.span.start.toISOString(), endTime: l.span.end.toISOString(), breakMin: l.breakMin,
+      })),
       distM: Math.round(state.distM),
       coords: sampleCoords(pts, 10),
     });
     const serverTotal = d.fare.total;
-    const localTotal = calcFareBreakdown(elapsedMinutes()).total;
+    const localTotal = calc.total;
     document.getElementById('complete-summary').textContent =
       `${state.member}様 / ${fmtYen(serverTotal)} / 参考走行距離 ${(state.distM/1000).toFixed(3)}km`;
     const notes = [];
@@ -826,10 +993,10 @@ async function saveRecord() {
 
 function resetState() {
   stopElapsedTimer(); stopGPS();
-  if (state.companionKaigo) toggleCompanion('kaigo');
-  if (state.companionKango) toggleCompanion('kango');
   if (state.discount) toggleDiscount();
-  Object.assign(state, { recordId: '', member: '', startTime: null, endTime: null, distM: 0, lastPos: null, coords: [] });
+  Object.assign(state, { recordId: '', member: '', staff: [newStaff(), newStaff()], driverBreak: 0, startTime: null, endTime: null, distM: 0, lastPos: null, coords: [] });
+  document.getElementById('staff-type-0').value = '';
+  document.getElementById('staff-type-1').value = '';
   document.getElementById('member-select').value = '';
   document.getElementById('dist-display').textContent = '0.000';
 }
@@ -873,9 +1040,9 @@ const UNSENT_MAX_AGE_MS  = 7 * 24 * 60 * 60 * 1000; // 未送信：サーバー�
 
 function serializeTrip() {
   return {
-    v: 2, savedAt: Date.now(), screen: currentScreenId, recordId: state.recordId,
+    v: 3, savedAt: Date.now(), screen: currentScreenId, recordId: state.recordId,
     driver: state.driver, member: state.member,
-    companionKaigo: state.companionKaigo, companionKango: state.companionKango, discount: state.discount,
+    staff: state.staff.map(x => ({ type: x.type, start: x.start, end: x.end, breakMin: x.breakMin })), driverBreak: state.driverBreak, discount: state.discount,
     startTime: state.startTime ? state.startTime.toISOString() : null,
     endTime:   state.endTime   ? state.endTime.toISOString()   : null,
     distM: state.distM, lastPos: state.lastPos, coords: state.coords,
@@ -920,21 +1087,34 @@ async function maybeRestoreTrip() {
   if (reallyDiscard) clearPersistedTrip(); else restoreTrip(saved);
 }
 
+// 保存データからの復元。古い版（v2）の「介護士／看護師の同行」は、乗車の全時間を同行したものとして引き継ぐ
+function restoreStaff(saved) {
+  const out = [newStaff(), newStaff()];
+  if (Array.isArray(saved.staff)) {
+    saved.staff.slice(0, 2).forEach((x, i) => {
+      if (x && (x.type === 'kaigo' || x.type === 'kango')) out[i] = { type: x.type, start: String(x.start || ''), end: String(x.end || ''), breakMin: x.breakMin || 0 };
+    });
+  } else {
+    let k = 0;
+    if (saved.companionKaigo) out[k++] = { type: 'kaigo', start: '', end: '', breakMin: 0 };
+    if (saved.companionKango && k < 2) out[k++] = { type: 'kango', start: '', end: '', breakMin: 0 };
+  }
+  return out;
+}
 function restoreTrip(saved) {
   const s = getSession();
   Object.assign(state, {
     recordId: saved.recordId,
     driver: s ? s.driver : (saved.driver || ''),
     member: saved.member || '',
-    companionKaigo: !!saved.companionKaigo, companionKango: !!saved.companionKango, discount: !!saved.discount,
+    staff: restoreStaff(saved), driverBreak: saved.driverBreak || 0, discount: !!saved.discount,
     startTime: saved.startTime ? new Date(saved.startTime) : null,
     endTime: saved.endTime ? new Date(saved.endTime) : null,
     distM: saved.distM || 0, lastPos: saved.lastPos || null,
     coords: Array.isArray(saved.coords) ? saved.coords.filter(c => c && isFinite(c.lat) && isFinite(c.lng)) : [],
   });
   document.getElementById('member-select').value = state.member;
-  document.getElementById('comp-kaigo').classList.toggle('active', state.companionKaigo);
-  document.getElementById('comp-kango').classList.toggle('active', state.companionKango);
+  state.staff.forEach((st, i) => { document.getElementById(`staff-type-${i}`).value = st.type; });
   document.getElementById('discount-toggle').classList.toggle('active', state.discount);
 
   if (saved.screen === 'running' && state.startTime) {
